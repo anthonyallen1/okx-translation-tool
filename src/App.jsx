@@ -1,9 +1,28 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+/* ── Brand Palette ── */
 const C = {
-  bg: "#0B0E11", card: "#121417", el: "#1A1D21",
-  b1: "#22262B", b2: "#2B3039", t1: "#E1E4E8", t2: "#8A919E", t3: "#5C6470",
-  g: "#2DC08D", r: "#CF304A"
+  bg: "#1a1a1a",
+  card: "rgba(255,255,255,0.05)",
+  input: "rgba(255,255,255,0.07)",
+  dropZone: "rgba(255,255,255,0.025)",
+  headerBg: "rgba(26,26,26,0.97)",
+  border: "rgba(255,255,255,0.12)",
+  borderAcc: "rgba(188,255,47,0.35)",
+  borderDash: "rgba(255,255,255,0.15)",
+  t1: "#f5f5f5",
+  tLabel: "rgba(255,255,255,0.35)",
+  tField: "rgba(255,255,255,0.7)",
+  tPlace: "rgba(255,255,255,0.3)",
+  tMuted: "rgba(255,255,255,0.55)",
+  acc: "#BCFF2F",
+  accBg: "rgba(188,255,47,0.12)",
+  accBorder: "rgba(188,255,47,0.35)",
+  disabledBg: "rgba(255,255,255,0.06)",
+  red: "#f87171",
+  amber: "#fbbf24",
+  green: "#BCFF2F",
+  blue: "#60a5fa",
 };
 
 const LANGS = [
@@ -17,10 +36,10 @@ const LANGS = [
 
 const secColor = (s) => {
   if (/product card/i.test(s)) return "#A78BFA";
-  if (/^cta/i.test(s)) return "#F59E0B";
-  if (/subject|preheader/i.test(s)) return "#60A5FA";
-  if (/disclaimer/i.test(s)) return "#6B7280";
-  return "#8A919E";
+  if (/^cta/i.test(s)) return C.amber;
+  if (/subject|preheader/i.test(s)) return C.blue;
+  if (/disclaimer/i.test(s)) return C.tMuted;
+  return C.tField;
 };
 const secTag = (s) => {
   if (/product card/i.test(s)) return "CARD";
@@ -34,8 +53,7 @@ const sortSecs = (keys) => [...keys].sort((a, b) => secOrder(a) - secOrder(b));
 
 async function callAPI(msgs) {
   const r = await fetch("/.netlify/functions/ai-proxy", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 4096, messages: msgs })
   });
   const d = await r.json();
@@ -44,19 +62,56 @@ async function callAPI(msgs) {
   return JSON.parse(txt);
 }
 
+/* ── Shared Components ── */
+function OKXLogo() {
+  // Tight checkerboard: 5 white squares with minimal 1px gap
+  const s = 8; const g = 1.2; const u = s + g;
+  const squares = [[0,0],[2,0],[1,1],[0,2],[2,2]];
+  const grid = 3 * s + 2 * g;
+  const pad = 5;
+  const total = grid + pad * 2;
+  return (
+    <svg width={36} height={36} viewBox={`0 0 ${total} ${total}`} fill="none">
+      <rect width={total} height={total} rx="7" fill="#000"/>
+      {squares.map(([cx,cy], i) => (
+        <rect key={i} x={pad + cx * u} y={pad + cy * u} width={s} height={s} rx="0.5" fill="#fff"/>
+      ))}
+    </svg>
+  );
+}
+
 function Badge({ tag }) {
-  const cl = { META: "#60A5FA", COPY: "#8A919E", CTA: "#F59E0B", CARD: "#A78BFA", LEGAL: "#6B7280" };
-  return <span style={{ fontSize: 9, fontFamily: "monospace", padding: "1px 5px", borderRadius: 3, background: (cl[tag] || "#8A919E") + "22", color: cl[tag] || "#8A919E", fontWeight: 700, letterSpacing: 1 }}>{tag}</span>;
+  const cl = { META: C.blue, COPY: C.tMuted, CTA: C.amber, CARD: "#A78BFA", LEGAL: C.tMuted };
+  const col = cl[tag] || C.tMuted;
+  return <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 3, background: col + "1A", color: col, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>{tag}</span>;
 }
 
 function StepBadge({ n }) {
-  return <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12, background: C.g, color: "#000", fontWeight: 800, fontSize: 12, fontFamily: "monospace", marginRight: 10 }}>{n}</span>;
+  return <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 6, background: C.accBg, border: `1px solid ${C.accBorder}`, color: C.acc, fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono',monospace", marginRight: 12, flexShrink: 0 }}>{n}</span>;
 }
 
 function CopyBtn({ text }) {
   const [ok, setOk] = useState(false);
-  return <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }} style={{ background: "none", border: `1px solid ${C.b2}`, color: ok ? C.g : C.t2, borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 11, fontFamily: "monospace" }}>{ok ? "✓" : "Copy"}</button>;
+  return <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }} style={{ background: "none", border: `1px solid ${C.border}`, color: ok ? C.acc : C.tMuted, borderRadius: 5, padding: "3px 10px", cursor: "pointer", fontSize: 11, fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s" }}>{ok ? "✓ Copied" : "Copy"}</button>;
 }
+
+/* ── Gradient Keyframes (injected once) ── */
+const GRADIENT_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+`;
 
 export default function App() {
   const [subj, setSubj] = useState("");
@@ -74,10 +129,7 @@ export default function App() {
 
   const handleFile = useCallback((f) => {
     if (!f || !f.type.startsWith("image/")) return;
-    setImg(f);
-    const r = new FileReader();
-    r.onload = () => setImgPrev(r.result);
-    r.readAsDataURL(f);
+    setImg(f); const r = new FileReader(); r.onload = () => setImgPrev(r.result); r.readAsDataURL(f);
   }, []);
 
   useEffect(() => {
@@ -136,100 +188,202 @@ export default function App() {
       [...langs].forEach(l => { row += "\t" + String(results[l]?.[k] || "").replace(/\t/g, " "); });
       tsv += row + "\n";
     });
-    const blob = new Blob([tsv], { type: "text/tab-separated-values" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "okx-translations.tsv"; a.click();
+    const a = document.createElement("a");
+    a.href = "data:text/tab-separated-values;charset=utf-8," + encodeURIComponent(tsv);
+    a.download = "okx-translations.tsv"; a.click();
   };
 
   const sortedKeys = secs ? sortSecs(Object.keys(secs)) : [];
-  const si = { width: "100%", background: C.el, border: `1px solid ${C.b2}`, borderRadius: 6, padding: "9px 12px", color: C.t1, fontSize: 13, fontFamily: "system-ui", outline: "none", boxSizing: "border-box" };
-  const sb = (on) => ({ padding: "10px 22px", borderRadius: 6, border: "none", fontWeight: 700, fontSize: 13, fontFamily: "monospace", cursor: on ? "pointer" : "default", background: on ? C.g : C.b2, color: on ? "#000" : C.t3, opacity: on ? 1 : 0.5, width: "100%" });
+
+  /* ── Shared Styles ── */
+  const si = { width: "100%", background: C.input, border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px", color: C.t1, fontSize: 13, fontFamily: "'JetBrains Mono',monospace", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" };
+  const cardS = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px 26px", marginBottom: 20, animation: "fadeInUp 0.4s ease both" };
+  const ctaBtn = (on) => ({
+    padding: "12px 24px", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13,
+    fontFamily: "'DM Sans',sans-serif", cursor: on ? "pointer" : "default", width: "100%",
+    letterSpacing: 0.3, transition: "all 0.3s",
+    ...(on ? {
+      background: "linear-gradient(90deg, #7a9c00, #BCFF2F, #d4ff73, #BCFF2F, #7a9c00)",
+      backgroundSize: "200% auto",
+      animation: "shimmer 3s linear infinite",
+      color: "#000",
+    } : {
+      background: C.disabledBg, color: C.tMuted, opacity: 0.4,
+    })
+  });
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.t1, fontFamily: "system-ui, sans-serif", padding: "0 0 60px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "18px 24px", borderBottom: `1px solid ${C.b1}` }}>
-        <span style={{ background: "#fff", color: "#000", fontWeight: 900, fontSize: 13, fontFamily: "monospace", padding: "4px 8px", borderRadius: 4, letterSpacing: 1 }}>OKX</span>
-        <span style={{ fontSize: 17, fontWeight: 700, fontFamily: "monospace", letterSpacing: -0.5 }}>Email Translator</span>
+    <div style={{ minHeight: "100vh", background: C.bg, color: C.t1, fontFamily: "'DM Sans',sans-serif" }}>
+      <style>{GRADIENT_CSS}</style>
+
+      {/* ── Header ── */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: C.headerBg, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <OKXLogo />
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: -0.3 }}>Email Translation Agent</div>
+              <div style={{ fontSize: 11, color: C.tLabel, fontWeight: 500, letterSpacing: 1.5, textTransform: "uppercase", marginTop: 1 }}>Global Email Marketing</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.acc, boxShadow: `0 0 8px ${C.acc}66` }}></span>
+            <span style={{ fontSize: 11, color: C.tMuted, fontFamily: "'JetBrains Mono',monospace" }}>Online</span>
+          </div>
+        </div>
       </div>
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "20px 16px" }}>
-        {/* Step 1 */}
-        <div style={{ background: C.card, border: `1px solid ${C.b1}`, borderRadius: 10, padding: "20px 22px", marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 14, fontSize: 14, fontWeight: 700, fontFamily: "monospace" }}><StepBadge n={1} />Email Content</div>
-          <div style={{ fontSize: 11, fontFamily: "monospace", color: C.t2, marginBottom: 4, display: "flex", justifyContent: "space-between" }}><span>Subject Line</span><span style={{ color: subj.length > 33 ? C.r : C.t3 }}>{subj.length}/33</span></div>
-          <input style={si} value={subj} onChange={e => setSubj(e.target.value)} placeholder="Enter subject line..." />
-          <div style={{ height: 10 }} />
-          <div style={{ fontSize: 11, fontFamily: "monospace", color: C.t2, marginBottom: 4, display: "flex", justifyContent: "space-between" }}><span>Preheader</span><span style={{ color: preh.length > 37 ? C.r : C.t3 }}>{preh.length}/37</span></div>
-          <input style={si} value={preh} onChange={e => setPreh(e.target.value)} placeholder="Enter preheader..." />
-          <div style={{ height: 14 }} />
+
+      {/* ── Hero / Gradient Title ── */}
+      <div style={{ textAlign: "center", padding: "52px 24px 36px" }}>
+        <h1 style={{
+          fontSize: 56, fontWeight: 800, margin: 0, letterSpacing: -1.5, lineHeight: 1.1,
+          background: "linear-gradient(90deg, #BCFF2F, #34d399, #60a5fa, #a78bfa, #BCFF2F)",
+          backgroundSize: "300% 300%",
+          animation: "gradientFlow 6s ease infinite",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+        }}>Translate.</h1>
+        <p style={{ color: C.tMuted, fontSize: 15, marginTop: 10, fontWeight: 400, letterSpacing: 0.2 }}>
+          AI-powered translations across 21 languages
+        </p>
+      </div>
+
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 80px" }}>
+
+        {/* ── Step 1: Email Content ── */}
+        <div style={{ ...cardS, animationDelay: "0.05s" }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
+            <StepBadge n={1} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: -0.2 }}>Email Content</span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{ fontSize: 11, color: C.tField, fontWeight: 500 }}>Subject Line</span>
+                <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: subj.length > 33 ? C.red : C.tLabel }}>{subj.length}/33</span>
+              </div>
+              <input style={si} value={subj} onChange={e => setSubj(e.target.value)} placeholder="Enter subject line..." />
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{ fontSize: 11, color: C.tField, fontWeight: 500 }}>Preheader</span>
+                <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: preh.length > 37 ? C.red : C.tLabel }}>{preh.length}/37</span>
+              </div>
+              <input style={si} value={preh} onChange={e => setPreh(e.target.value)} placeholder="Enter preheader..." />
+            </div>
+          </div>
+
           {!imgPrev ? (
-            <div style={{ border: `2px dashed ${C.b2}`, borderRadius: 8, padding: "32px 16px", textAlign: "center", cursor: "pointer", color: C.t3, fontSize: 13 }}
+            <div style={{
+              border: `2px dashed ${C.borderDash}`, borderRadius: 12, padding: "40px 20px", textAlign: "center",
+              cursor: "pointer", color: C.tPlace, fontSize: 13, background: C.dropZone, transition: "all 0.25s"
+            }}
               onClick={() => fileRef.current?.click()}
-              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.g; }}
-              onDragLeave={e => { e.currentTarget.style.borderColor = C.b2; }}
-              onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.b2; handleFile(e.dataTransfer.files[0]); }}>
-              📸 Drop, click, or paste (Ctrl+V) a screenshot
+              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.acc; e.currentTarget.style.background = C.accBg; }}
+              onDragLeave={e => { e.currentTarget.style.borderColor = C.borderDash; e.currentTarget.style.background = C.dropZone; }}
+              onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.borderDash; e.currentTarget.style.background = C.dropZone; handleFile(e.dataTransfer.files[0]); }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>📸</div>
+              <div style={{ fontWeight: 500 }}>Drop, click, or paste (Ctrl+V) a screenshot</div>
+              <div style={{ fontSize: 11, color: C.tLabel, marginTop: 6 }}>Supports PNG, JPG, WebP</div>
               <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
             </div>
           ) : (
-            <div style={{ position: "relative", display: "inline-block" }}>
-              <img src={imgPrev} alt="preview" style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 6, border: `1px solid ${C.b2}` }} />
-              <button onClick={() => { setImg(null); setImgPrev(null); setSecs(null); }} style={{ position: "absolute", top: 6, right: 6, background: C.r, color: "#fff", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 12, lineHeight: "22px", padding: 0 }}>✕</button>
+            <div style={{ position: "relative", display: "inline-block", borderRadius: 10, overflow: "hidden", border: `1px solid ${C.border}` }}>
+              <img src={imgPrev} alt="preview" style={{ maxWidth: "100%", maxHeight: 240, display: "block" }} />
+              <button onClick={() => { setImg(null); setImgPrev(null); setSecs(null); }} style={{
+                position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#fff",
+                border: `1px solid ${C.border}`, borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)"
+              }}>✕</button>
             </div>
           )}
-          <div style={{ height: 14 }} />
-          <button style={sb(!!img && !extracting)} onClick={extract} disabled={!img || extracting}>
-            {extracting ? "Extracting..." : secs ? "Re-extract" : "Extract Content"}
+
+          <div style={{ height: 16 }} />
+          <button style={ctaBtn(!!img && !extracting)} onClick={extract} disabled={!img || extracting}>
+            {extracting ? "⏳ Extracting content..." : secs ? "🔄 Re-extract" : "⚡ Extract Content"}
           </button>
+
           {secs && (
-            <div style={{ marginTop: 16, background: C.el, borderRadius: 8, border: `1px solid ${C.g}33`, padding: "14px 16px" }}>
-              <div style={{ fontSize: 12, fontFamily: "monospace", color: C.g, marginBottom: 10, fontWeight: 700 }}>✓ Extracted {sortedKeys.length} sections</div>
+            <div style={{ marginTop: 20, background: C.accBg, borderRadius: 12, border: `1px solid ${C.accBorder}`, padding: "18px 20px", animation: "fadeInUp 0.3s ease both" }}>
+              <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono',monospace", color: C.acc, marginBottom: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.acc }}></span>
+                {sortedKeys.length} sections extracted
+              </div>
               {sortedKeys.map(k => (
-                <div key={k} style={{ marginBottom: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                    <span style={{ fontSize: 11, fontFamily: "monospace", color: secColor(k), fontWeight: 600 }}>{k}</span>
+                <div key={k} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: secColor(k), fontWeight: 600 }}>{k}</span>
                     <Badge tag={secTag(k)} />
                   </div>
-                  <textarea style={{ ...si, minHeight: 36, resize: "vertical", fontSize: 12, lineHeight: 1.4 }} value={secs[k]} onChange={e => setSecs(p => ({ ...p, [k]: e.target.value }))} />
+                  <textarea style={{ ...si, minHeight: 38, resize: "vertical", fontSize: 12, lineHeight: 1.5 }}
+                    value={secs[k]} onChange={e => setSecs(p => ({ ...p, [k]: e.target.value }))} />
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Step 2 */}
-        <div style={{ background: C.card, border: `1px solid ${C.b1}`, borderRadius: 10, padding: "20px 22px", marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 14, fontSize: 14, fontWeight: 700, fontFamily: "monospace" }}>
-            <StepBadge n={2} />Target Languages
-            {langs.size > 0 && <span style={{ marginLeft: 8, fontSize: 11, background: C.g + "22", color: C.g, padding: "2px 8px", borderRadius: 10, fontFamily: "monospace" }}>{langs.size}</span>}
+        {/* ── Step 2: Target Languages ── */}
+        <div style={{ ...cardS, animationDelay: "0.1s" }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+            <StepBadge n={2} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: -0.2 }}>Target Languages</span>
+            {langs.size > 0 && <span style={{ marginLeft: 10, fontSize: 11, background: C.accBg, color: C.acc, padding: "3px 10px", borderRadius: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, border: `1px solid ${C.accBorder}` }}>{langs.size}</span>}
           </div>
-          <div style={{ display: "flex", gap: 14, marginBottom: 10, fontSize: 12, fontFamily: "monospace" }}>
-            <span style={{ color: C.g, cursor: "pointer" }} onClick={() => setLangs(new Set(LANGS.map(l => l[0])))}>Select All</span>
-            <span style={{ color: C.t3, cursor: "pointer" }} onClick={() => setLangs(new Set())}>Clear All</span>
+          <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12 }}>
+            <span style={{ color: C.acc, cursor: "pointer", fontWeight: 600, transition: "opacity 0.2s" }} onClick={() => setLangs(new Set(LANGS.map(l => l[0])))}>Select All</span>
+            <span style={{ color: C.tMuted, cursor: "pointer", fontWeight: 500, transition: "opacity 0.2s" }} onClick={() => setLangs(new Set())}>Clear All</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(185px, 1fr))", gap: 6 }}>
-            {LANGS.map(([code, name, flag]) => (
-              <label key={code} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, padding: "5px 8px", borderRadius: 5, cursor: "pointer", background: langs.has(code) ? C.g + "11" : "transparent", border: `1px solid ${langs.has(code) ? C.g + "44" : "transparent"}` }}>
-                <input type="checkbox" checked={langs.has(code)} onChange={() => { const n = new Set(langs); n.has(code) ? n.delete(code) : n.add(code); setLangs(n); }} style={{ accentColor: C.g }} />
-                <span>{flag}</span><span style={{ fontFamily: "monospace" }}>{name}</span>
-              </label>
-            ))}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 6 }}>
+            {LANGS.map(([code, name, flag]) => {
+              const sel = langs.has(code);
+              return (
+                <label key={code} style={{
+                  display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "7px 10px",
+                  borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
+                  background: sel ? C.accBg : "transparent",
+                  border: `1px solid ${sel ? C.accBorder : "transparent"}`
+                }}>
+                  <input type="checkbox" checked={sel} onChange={() => { const n = new Set(langs); n.has(code) ? n.delete(code) : n.add(code); setLangs(n); }} style={{ accentColor: C.acc, width: 14, height: 14 }} />
+                  <span style={{ fontSize: 15 }}>{flag}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: sel ? C.t1 : C.tMuted, fontWeight: sel ? 600 : 400, transition: "all 0.2s" }}>{name}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
-        {/* Step 3 */}
-        <div style={{ background: C.card, border: `1px solid ${C.b1}`, borderRadius: 10, padding: "20px 22px", marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", marginBottom: 14, fontSize: 14, fontWeight: 700, fontFamily: "monospace" }}><StepBadge n={3} />Translate</div>
-          <button style={sb(!!secs && langs.size > 0 && !translating)} onClick={translate} disabled={!secs || langs.size === 0 || translating}>
-            {translating ? `Translating ${progress.cur}... (${progress.done}/${progress.total})` : `Translate to ${langs.size} Language${langs.size !== 1 ? "s" : ""}`}
+        {/* ── Step 3: Translate ── */}
+        <div style={{ ...cardS, animationDelay: "0.15s" }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+            <StepBadge n={3} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: -0.2 }}>Translate</span>
+          </div>
+          <button style={ctaBtn(!!secs && langs.size > 0 && !translating)} onClick={translate} disabled={!secs || langs.size === 0 || translating}>
+            {translating ? `⏳ Translating ${progress.cur}... (${progress.done}/${progress.total})` : `🌐 Translate to ${langs.size} Language${langs.size !== 1 ? "s" : ""}`}
           </button>
-          {translating && <div style={{ marginTop: 10, background: C.b1, borderRadius: 4, height: 6, overflow: "hidden" }}><div style={{ height: "100%", background: C.g, borderRadius: 4, width: `${(progress.done / Math.max(progress.total, 1)) * 100}%`, transition: "width 0.3s" }} /></div>}
+          {translating && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 6, height: 6, overflow: "hidden" }}>
+                <div style={{ height: "100%", background: `linear-gradient(90deg, #7a9c00, ${C.acc})`, borderRadius: 6, width: `${(progress.done / Math.max(progress.total, 1)) * 100}%`, transition: "width 0.4s ease" }} />
+              </div>
+              <div style={{ fontSize: 11, color: C.tLabel, fontFamily: "'JetBrains Mono',monospace", marginTop: 6, textAlign: "center" }}>
+                {progress.done} of {progress.total} languages complete
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Results */}
+        {/* ── Results ── */}
         {Object.keys(results).length > 0 && (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 14 }}>Results</span>
-              <button onClick={exportTSV} style={{ background: C.el, border: `1px solid ${C.b2}`, color: C.t1, padding: "6px 14px", borderRadius: 5, cursor: "pointer", fontSize: 12, fontFamily: "monospace" }}>Export TSV ↓</button>
+          <div style={{ animation: "fadeInUp 0.4s ease both" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, paddingTop: 8 }}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Results</span>
+              <button onClick={exportTSV} style={{
+                background: C.accBg, border: `1px solid ${C.accBorder}`, color: C.acc,
+                padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12,
+                fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, transition: "all 0.2s"
+              }}>↓ Export TSV</button>
             </div>
             {[...langs].map(code => {
               const l = LANGS.find(x => x[0] === code);
@@ -237,26 +391,31 @@ export default function App() {
               const isExp = expanded[code];
               const rKeys = results[code].error ? [] : sortSecs(Object.keys(results[code]));
               return (
-                <div key={code} style={{ background: C.card, border: `1px solid ${C.b1}`, borderRadius: 10, overflow: "hidden", marginBottom: 8 }}>
-                  <div onClick={() => setExpanded(p => ({ ...p, [code]: !p[code] }))} style={{ display: "flex", alignItems: "center", padding: "12px 16px", cursor: "pointer", justifyContent: "space-between", background: isExp ? C.el : "transparent" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span>{l?.[2]}</span>
-                      <span style={{ fontFamily: "monospace", fontWeight: 600, fontSize: 13 }}>{l?.[1]}</span>
+                <div key={code} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 8 }}>
+                  <div onClick={() => setExpanded(p => ({ ...p, [code]: !p[code] }))} style={{
+                    display: "flex", alignItems: "center", padding: "14px 18px", cursor: "pointer",
+                    justifyContent: "space-between", background: isExp ? "rgba(255,255,255,0.03)" : "transparent", transition: "background 0.2s"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 18 }}>{l?.[2]}</span>
+                      <span style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: 14 }}>{l?.[1]}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <CopyBtn text={rKeys.map(k => `${k}: ${results[code][k]}`).join("\n")} />
-                      <span style={{ color: C.t3, fontSize: 16, transform: isExp ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+                      <span style={{ color: C.tLabel, fontSize: 18, transform: isExp ? "rotate(180deg)" : "none", transition: "transform 0.25s" }}>▾</span>
                     </div>
                   </div>
                   {isExp && (
-                    <div style={{ padding: "8px 16px 14px" }}>
-                      {results[code].error ? <div style={{ color: C.r, fontSize: 12 }}>Error: {results[code].error}</div> : rKeys.map(k => (
-                        <div key={k} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "6px 0", borderBottom: `1px solid ${C.b1}` }}>
-                          <div style={{ minWidth: 150, flexShrink: 0 }}>
-                            <span style={{ fontSize: 11, fontFamily: "monospace", color: secColor(k) }}>{k}</span>
-                            <div style={{ marginTop: 2 }}><Badge tag={secTag(k)} /></div>
+                    <div style={{ padding: "6px 18px 16px" }}>
+                      {results[code].error ? (
+                        <div style={{ color: C.red, fontSize: 12, fontFamily: "'JetBrains Mono',monospace" }}>Error: {results[code].error}</div>
+                      ) : rKeys.map(k => (
+                        <div key={k} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
+                          <div style={{ minWidth: 155, flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: secColor(k), fontWeight: 600 }}>{k}</span>
+                            <div style={{ marginTop: 3 }}><Badge tag={secTag(k)} /></div>
                           </div>
-                          <div style={{ flex: 1, fontSize: 13, lineHeight: 1.5, color: C.t1, wordBreak: "break-word" }}>{results[code][k]}</div>
+                          <div style={{ flex: 1, fontSize: 13, lineHeight: 1.6, color: C.t1, wordBreak: "break-word" }}>{results[code][k]}</div>
                           <CopyBtn text={results[code][k]} />
                         </div>
                       ))}
