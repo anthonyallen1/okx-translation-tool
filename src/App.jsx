@@ -168,7 +168,18 @@ export default function App() {
       const name = l ? l[1] : arr[i];
       setProgress({ cur: name, done: i, total: arr.length });
       try {
-        const extra = arr[i] === "es-419" ? "Use Latin American Spanish." : arr[i] === "pt-BR" ? "Use Brazilian Portuguese." : arr[i] === "zh-TW" ? "Use Traditional Chinese for Taiwan/HK." : arr[i] === "zh-CN" ? "Use Simplified Chinese for mainland China." : "";
+        const extra = arr[i] === "es-419" ? "Use Latin American Spanish." : arr[i] === "pt-BR" ? "Use Brazilian Portuguese." : arr[i] === "zh-TW" ? "Use Traditional Chinese for Taiwan/HK." : arr[i] === "zh-CN" ? "Use Simplified Chinese for mainland China." : arr[i] === "pl" ? `Polish-specific rules (from human review):
+- Use "księga zleceń" for "order book" (NOT "arkusz zleceń").
+- Use "inwestorów" for "traders/investors" in formal contexts (NOT "traderów").
+- Use "zaawansowany" for "powerful" in trading context (NOT "potężny").
+- Use "platforma tradingowa" over "doświadczenie tradingowe" for "trading experience/platform".
+- Use "osiąganie zysku" for "winning" in trading context (NOT "wygrywanie").
+- Use "wypisać się" for "unsubscribe" (NOT "zrezygnować z subskrypcji").
+- Prefer present tense for immediacy: "To się teraz zmienia" over "To się zmieni".
+- Avoid overly literal translations; use natural, professional Polish register.
+- "Nie rezygnuj z niczego" is preferred over "Nie zostawiaj nic" for "Leave nothing behind".
+- Use "tworzymy/wprowadzamy" over "budujemy/przynosimy" for "building/bringing" product features.
+- "z myślą o Europie" is more natural than "dla Europy" for "built for Europe".` : "";
         const prompt = `Translate these OKX email sections to ${name}. Keep brand names (OKX, Bitcoin, Solana, Ethereum, USDT, etc) and URLs unchanged. Keep "• " bullets. Subject ~33 chars, Preheader ~37 chars, CTAs 1-3 words. ${extra}\n${JSON.stringify(secs)}\nReturn ONLY JSON with same keys, translated values. No markdown.`;
         const data = await callAPI([{ role: "user", content: prompt }]);
         res[arr[i]] = data;
